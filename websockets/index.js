@@ -5,50 +5,75 @@ const decoder = require("../controllers/decode");
 const dbservice = require("../Services");
 
 module.exports = (server) => {
-  const database = new dbservice();
+    const database = new dbservice();
+    const usersOnline = {}
 
-  const webSocketServer = new webSocket.Server({
-    noServer: true,
-    path: "/websockets",
-  });
-
-  server.on("upgrade", (request, socket, head) => {
-    const [_path, params] = request?.url?.split("?");
-    const connectionParams = queryString.parse(params);
-    if (!database.searchWhitelist(connectionParams?.check)) {
-      connection.close();
-      return;
-    }
-    webSocketServer.handleUpgrade(request, socket, head, (websocket) => {
-      webSocketServer.emit("connection", websocket, request);
+    const webSocketServer = new webSocket.Server({
+        noServer: true,
+        path: "/websockets",
     });
-  });
 
-  webSocketServer.on(
-    "connection",
-    async function connection(webSocketConnection, connectionRequest) {
-      // webSocketConnection.id = "kojovi"
-      const [_path, params] = connectionRequest?.url?.split("?");
-      const connectionParams = queryString.parse(params);
-      const jwtContent = decoder(connectionParams?.check);
-      if (jwtContent?.expired) {
-        connection.close();
-        return;
-      }
-      webSocketConnection.id = jwtContent?.email;
-      const allUsers = await database.fetchAllUsers()
-      const initialResponse = {currentUser:jwtContent?.email, Users:allUsers}
-      webSocketConnection.send(JSON.stringify( initialResponse))
-      webSocketConnection.on("message", (message) => {
-        console.log(webSocketConnection.id,message);
-        webSocketConnection.send(
-          JSON.stringify({ message: "There be gold in them thar hills." })
-        );
-      });
+    const sendMessage = (data) => {
+        Object.keys(usersOnline).map((client) => {
+            usersOnline[client]?.send(JSON.stringify(data));
+        });
     }
-  );
 
-  return webSocketServer;
+    server.on("upgrade", (request, socket, head) => {
+        const [_path, params] = request?.url?.split("?");
+        const connectionParams = queryString.parse(params);
+        if (!database.searchWhitelist(connectionParams?.check)) {
+            connection.close();
+            return;
+        }
+        webSocketServer.handleUpgrade(request, socket, head, (websocket) => {
+            webSocketServer.emit("connection", websocket, request);
+        });
+    });
+
+    webSocketServer.on(
+        "connection",
+        async function connection(webSocketConnection, connectionRequest) {
+            // webSocketConnection.id = "kojovi"
+            const [_path, params] = connectionRequest?.url?.split("?");
+            const connectionParams = queryString.parse(params);
+            const jwtContent = decoder(connectionParams?.check);
+            if (jwtContent?.expired) {
+                connection.close();
+                return;
+            }
+            webSocketConnection.id = jwtContent?.email;
+
+            usersOnline[jwtContent?.email] = webSocketConnection
+
+            console.log(Object.getOwnPropertyNames(usersOnline))
+
+            console.log(usersOnline)
+            let userUpdate = { currentUser: jwtContent?.email, usersOnline: Object.getOwnPropertyNames(usersOnline), category: "users_update" }
+
+
+            webSocketConnection.send(JSON.stringify(userUpdate))
+
+            webSocketConnection.on("message", (message) => {
+
+                console.log(webSocketConnection.id, JSON.parse(message));
+                webSocketConnection.send(
+                    JSON.stringify({ message: "There be gold in them thar hills." })
+                );
+            });
+
+            webSocketConnection.on('close', function (connection) {
+                delete usersOnline[jwtContent.email]
+                userUpdate = { usersOnline: Object.getOwnPropertyNames(usersOnline), category: "users_update" }
+                console.log(userUpdate);
+
+                sendMessage(userUpdate)
+
+            })
+        }
+    );
+
+    return webSocketServer;
 };
 
 // var express = require('express');
