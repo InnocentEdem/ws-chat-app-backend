@@ -17,9 +17,7 @@ module.exports = (sequelize, DataTypes) => {
     msg_text: DataTypes.TEXT,
     sent_by: DataTypes.STRING,
     sent_to: DataTypes.STRING,
-    received: DataTypes.STRING,
-    new: DataTypes.BOOLEAN,
-    read: DataTypes.BOOLEAN
+
   }, {
     sequelize,
     modelName: 'Message',

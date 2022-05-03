@@ -21,3 +21,6 @@ const findAllMessagesForUser = async({payload,action})=>{
  
 
 }
+module.exports={
+    findAllMessagesForUser
+}

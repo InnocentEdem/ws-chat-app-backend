@@ -9,22 +9,14 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       msg_text: {
-        type: Sequelize.TEXT
+        type: Sequelize.TEXT,
+        allowNull: false,
       },
       sent_by: {
         type: Sequelize.STRING
       },
       sent_to: {
         type: Sequelize.STRING
-      },
-      read: {
-        type: Sequelize.BOOLEAN
-      },
-      new: {
-        type: Sequelize.BOOLEAN
-      },
-      received: {
-        type: Sequelize.BOOLEAN
       },
       createdAt: {
         allowNull: false,

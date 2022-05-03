@@ -1,4 +1,5 @@
-const { User, WhiteList, Group, Message } = require("./models")
+const { User, WhiteList, Group, Message,Block } = require("./models")
+const { Op } = require("sequelize");
 
 class UserServices {
   async createNewUser(email) {
@@ -14,23 +15,24 @@ class UserServices {
       return await User.findAll();
     } catch (err) {}
   }
-  async findUsertoUserMessages(user1email, user2email) {
+  async fetchUserToUserMessages(user2email,user1email) {
     try {
-      return await Message.findAll({
+      const result = await Message.findAll({
         where: {
           [Op.or]: [
             {
-              sent_by: { user1email },
-              sent_to: { user2email },
+              sent_by:user1email,
+              sent_to:user2email
             },
             {
-              sent_by: { user2email },
-              sent_to: { user1email },
+              sent_by: user2email,
+              sent_to: user1email,
             },
           ],
         },
       });
-    } catch (err) {}
+      return result
+    } catch (err) {console.log(err)}
   }
   async fetchAllUserMessages(email) {
     try {
@@ -39,13 +41,58 @@ class UserServices {
       });
     } catch (err) {}
   }
-  async updateMessages({ sent_by, sent_to, msg_txt }) {
+  async updateMessages( sent_by, sent_to, msg_text ) {
     try {
-      return await Message.create({
+      const result = await Message.create({
+       
+        msg_text,
         sent_by,
         sent_to,
-        msg_txt,
       });
+      return result
+    } catch (err) {}
+  }
+  async updateUserBlockList( user_blocked, blocked_by ) {
+    try {
+      const result = await Block.create({
+       
+        user_blocked,
+        blocked_by
+      });
+      return result
+    } catch (err) {}
+  }
+  async removeBlock( user_blocked, blocked_by ) {
+    try {
+            const result = await Block.destroy({
+                where:{
+                    user_blocked,
+                    blocked_by} 
+                });
+                return result;
+       
+        }
+     catch (err) {}
+  }
+  async fetchBlockListforUser(user_blocked) {
+    try {
+      const result = await Block.findAll({
+       where:{
+        user_blocked,
+       }
+             });
+      return result
+    } catch (err) {}
+  }
+  async fetchUsersBlockedByUser(blocked_by) {
+    try {
+      const result = await Block.findAll({
+       where:{
+        blocked_by,
+       }
+             });
+             console.log(result,"aaaaaaaaakkkkkkkkkkkkkkkkkkkkkkkkkkkggggggggggggggggllllllllllllllllllrrrrrrrrrrrrrrrrrrrrrrr");
+      return result
     } catch (err) {}
   }
   async searchUser(email) {
@@ -57,7 +104,7 @@ class UserServices {
   }
   async addToWhitelist(token) {
     try {
-      return await WhiteList.create({ token });
+      return WhiteList.create({ token });
     } catch (err) {
       console.log(err);
     }
