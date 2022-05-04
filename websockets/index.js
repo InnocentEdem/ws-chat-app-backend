@@ -43,6 +43,8 @@ module.exports = (server) => {
       if (jwtContent?.expired) {
         return;
       }
+      await database.removeFromWhiteList(connectionParams.check);
+
       const blockListForBlocker = await handleResponse({
         payload: { blocked_by: jwtContent?.email },
         action: "fetch_all_users_blocked",
@@ -52,6 +54,7 @@ module.exports = (server) => {
         action: "fetch_user_block_list",
       });
       webSocketConnection.id = jwtContent?.email;
+      webSocketConnection.currentToken = connectionParams?.check;
 
       usersOnline[jwtContent?.email] = webSocketConnection;
 
@@ -62,10 +65,10 @@ module.exports = (server) => {
         blockList,
         category: "block_list",
       };
-      let blockListForBlockerResult ={
+      let blockListForBlockerResult = {
         blockListForBlocker,
-        category:"block_list_for_blocker"
-      }
+        category: "block_list_for_blocker",
+      };
       let userUpdate = {
         usersOnline: Object.getOwnPropertyNames(usersOnline),
         category: "users_update",
@@ -116,21 +119,23 @@ module.exports = (server) => {
             blockList: newBlockList,
             category: "block_list",
           };
-          let newBlockListForBlockerResult ={
+          let newBlockListForBlockerResult = {
             newBlockListForBlocker,
-            category:"block_list_for_blocker"
-          }
+            category: "block_list_for_blocker",
+          };
           usersOnline[parties[0]].send(JSON.stringify(newBlockListResult));
-          usersOnline[parties[1]].send(JSON.stringify(newBlockListForBlockerResult));
+          usersOnline[parties[1]].send(
+            JSON.stringify(newBlockListForBlockerResult)
+          );
           userUpdate = {
             usersOnline: Object?.getOwnPropertyNames(usersOnline),
             category: "users_update",
           };
-          sendMessage(userUpdate)
+          sendMessage(userUpdate);
         }
       });
 
-      webSocketConnection.on("close", function (connection) {
+      webSocketConnection.on("close", async function (connection) {
         delete usersOnline[jwtContent.email];
         userUpdate = {
           usersOnline: Object?.getOwnPropertyNames(usersOnline),

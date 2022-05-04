@@ -91,7 +91,6 @@ class UserServices {
         blocked_by,
        }
              });
-             console.log(result,"aaaaaaaaakkkkkkkkkkkkkkkkkkkkkkkkkkkggggggggggggggggllllllllllllllllllrrrrrrrrrrrrrrrrrrrrrrr");
       return result
     } catch (err) {}
   }
@@ -105,6 +104,15 @@ class UserServices {
   async addToWhitelist(token) {
     try {
       return WhiteList.create({ token });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+  async removeFromWhiteList(token) {
+    try {
+      return WhiteList.destroy({
+          where:{ token} 
+        });
     } catch (err) {
       console.log(err);
     }
