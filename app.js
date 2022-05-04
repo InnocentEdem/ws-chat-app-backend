@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const PORT = process.env.PORT || 5003
 
 const server = app.listen(PORT,()=>{
-  console.log("server running");
+  // console.log("server running");
   // sequelize.authenticate()
 })
 app.use(cors())
