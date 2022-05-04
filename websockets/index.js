@@ -1,6 +1,5 @@
 const webSocket = require("ws");
 const queryString = require("query-string");
-const { auth } = require("express-oauth2-jwt-bearer");
 const decoder = require("../livemessagingcontroller/decode");
 const dbservice = require("../Services");
 const handleResponse = require("../livemessagingcontroller");
@@ -20,11 +19,13 @@ module.exports = (server) => {
     });
   };
 
-  server.on("upgrade", (request, socket, head) => {
+  server.on("upgrade", async(request, socket, head) => {
     const [_path, params] = request?.url?.split("?");
     const connectionParams = queryString.parse(params);
 
-    if (!database.searchWhitelist(connectionParams?.check)) {
+    const dbCheck = await database.searchWhitelist(connectionParams?.check)
+
+    if (!dbCheck) {
       return;
     }
 
@@ -43,8 +44,7 @@ module.exports = (server) => {
       if (jwtContent?.expired) {
         return;
       }
-      await database.removeFromWhiteList(connectionParams.check);
-
+       const remove = await database.removeFromWhiteList(connectionParams?.check);
       const blockListForBlocker = await handleResponse({
         payload: { blocked_by: jwtContent?.email },
         action: "fetch_all_users_blocked",

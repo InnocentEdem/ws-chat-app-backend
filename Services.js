@@ -103,7 +103,10 @@ class UserServices {
   }
   async addToWhitelist(token) {
     try {
-      return WhiteList.create({ token });
+     const result = await WhiteList.findOrCreate({
+        where:{ token} 
+      });
+      return result
     } catch (err) {
       console.log(err);
     }
@@ -119,9 +122,10 @@ class UserServices {
   }
   async searchWhitelist(token) {
     try {
-      return await WhiteList.findOne({
+       const confirm = await WhiteList.findAll({
         where: { token },
       });
+      return confirm
     } catch (err) {}
   }
   // async addUserToGroup(user){
