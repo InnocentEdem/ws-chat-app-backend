@@ -10,18 +10,15 @@ const logger = require('morgan');
 const webSocketServer = require("./websockets")
 var dbservice=require("./Services");
 
-
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-
 const PORT = process.env.PORT || 5003
-
 const server = app.listen(PORT,()=>{
-  // console.log("server running");
+  console.log("server running");
   // sequelize.authenticate()
 })
 app.use(cors())
@@ -39,40 +36,19 @@ var jwtCheck = jwt({
 });
 app.use(jwtCheck);
 
-
-
 app.get('/authorized', async function (req, res) {
-  console.log("confirmed")
+  try{
+  console.log(req.auth)
   const database = new dbservice;
+  console.log(req.auth['https://localhost:3000/claims/email']);
   const user = await database.createNewUser(req.auth['https://localhost:3000/claims/email'])
   const token = req.headers.authorization.split(' ')[1]
   const result = await database.addToWhitelist(token)
   res.json([result,user]);
+  }catch(err){
+    console.log(err)
+    res.json(err)
+  }
 });
 webSocketServer(server)
 
-
-
-
-
-// app.use('/', indexRouter);
-// app.use('/users', usersRouter);
-// console.log("FFFFF")
-
-// // catch 404 and forward to error handler
-// app.use(function(req, res, next) {
-//   next(createError(404));
-// });
-
-// // error handler
-// app.use(function(err, req, res, next) {
-//   // set locals, only providing error in development
-//   res.locals.message = err.message;
-//   res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-//   // render the error page
-//   res.status(err.status || 500);
-//   res.render('error');
-// });
-
-// module.exports = app;

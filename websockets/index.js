@@ -58,9 +58,6 @@ module.exports = (server) => {
 
       usersOnline[jwtContent?.email] = webSocketConnection;
 
-      console.log(Object.getOwnPropertyNames(usersOnline));
-
-      console.log(usersOnline);
       let blockListResult = {
         blockList,
         category: "block_list",
@@ -81,7 +78,6 @@ module.exports = (server) => {
 
       webSocketConnection.on("message", async (message) => {
         const newMessage = JSON.parse(message);
-        console.log(newMessage);
         if (newMessage?.action === "send_new_message") {
           parties = [newMessage?.payload.sent_to, newMessage?.payload.sent_by];
         }
