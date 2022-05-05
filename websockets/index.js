@@ -96,10 +96,10 @@ module.exports = (server) => {
             newMessage?.payload.blocked_by,
           ];
         }
-        if(message.action ==="do_not _sleep"){
+        if(message.action ==="do_not_sleep"){
            userUpdate = {
-            usersOnline: Object.getOwnPropertyNames(usersOnline),
-            category: "users_update",
+            usersOnline: "Not needed",
+            category: "do_not_sleep",
           };
           sendMessage(userUpdate)
 
