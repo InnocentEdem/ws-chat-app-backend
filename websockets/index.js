@@ -15,21 +15,19 @@ module.exports = (server) => {
 
   const sendMessage = (data) => {
     Object.keys(usersOnline)?.map((client) => {
-      try{
-        if(usersOnline?.[client]){
+      try {
+        if (usersOnline?.[client]) {
           usersOnline?.[client]?.send(JSON.stringify(data));
         }
-      }catch(err){
-        
-      }
+      } catch (err) {}
     });
   };
 
-  server.on("upgrade", async(request, socket, head) => {
+  server.on("upgrade", async (request, socket, head) => {
     const [_path, params] = request?.url?.split("?");
     const connectionParams = queryString.parse(params);
 
-    const dbCheck = await database.searchWhitelist(connectionParams?.check)
+    const dbCheck = await database.searchWhitelist(connectionParams?.check);
 
     if (!dbCheck) {
       return;
@@ -50,7 +48,9 @@ module.exports = (server) => {
       if (jwtContent?.expired) {
         return;
       }
-       const remove = await database.removeFromWhiteList(connectionParams?.check);
+      const remove = await database.removeFromWhiteList(
+        connectionParams?.check
+      );
       const blockListForBlocker = await handleResponse({
         payload: { blocked_by: jwtContent?.email },
         action: "fetch_all_users_blocked",
@@ -96,23 +96,27 @@ module.exports = (server) => {
             newMessage?.payload.blocked_by,
           ];
         }
-        if(message.action ==="do_not_sleep"){
-           userUpdate = {
+        if (newMessage.action === "do_not_sleep") {
+          userUpdate = {
             usersOnline: "Not needed",
             category: "do_not_sleep",
           };
-          sendMessage(userUpdate)
-
+          sendMessage(userUpdate);
         }
+        const useControllers = async () => {
+          const response = await handleResponse({
+            payload: newMessage.payload,
+            action: newMessage.action,
+          });
+          return response;
+        };
 
-        const response = await handleResponse({
-          payload: newMessage.payload,
-          action: newMessage.action,
-        });
         webSocketConnection.send(JSON.stringify(response));
         if (newMessage?.action === "send_new_message") {
+          const response = useControllers();
 
-         usersOnline?.[parties[0]] && usersOnline?.[parties[0]].send(JSON.stringify(response));
+          usersOnline?.[parties[0]] &&
+            usersOnline?.[parties[0]].send(JSON.stringify(response));
         }
         if (
           newMessage?.action === "block_user" ||
