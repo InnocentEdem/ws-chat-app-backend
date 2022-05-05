@@ -14,9 +14,11 @@ module.exports = (server) => {
   });
 
   const sendMessage = (data) => {
-    Object.keys(usersOnline).map((client) => {
+    Object.keys(usersOnline)?.map((client) => {
       try{
-        usersOnline[client]?.send(JSON.stringify(data));
+        if(usersOnline?.[client]){
+          usersOnline?.[client]?.send(JSON.stringify(data));
+        }
       }catch(err){
         
       }
@@ -60,7 +62,7 @@ module.exports = (server) => {
       webSocketConnection.id = jwtContent?.email;
       webSocketConnection.currentToken = connectionParams?.check;
 
-      usersOnline[jwtContent?.email] = webSocketConnection;
+      usersOnline?.[jwtContent?.email] = webSocketConnection;
 
       let blockListResult = {
         blockList,
@@ -94,6 +96,14 @@ module.exports = (server) => {
             newMessage?.payload.blocked_by,
           ];
         }
+        if(message.action ==="do_not _sleep"){
+           userUpdate = {
+            usersOnline: Object.getOwnPropertyNames(usersOnline),
+            category: "users_update",
+          };
+          sendMessage(userUpdate)
+
+        }
 
         const response = await handleResponse({
           payload: newMessage.payload,
@@ -101,7 +111,8 @@ module.exports = (server) => {
         });
         webSocketConnection.send(JSON.stringify(response));
         if (newMessage?.action === "send_new_message") {
-          usersOnline[parties[0]].send(JSON.stringify(response));
+
+         usersOnline?.[parties[0]] && usersOnline?.[parties[0]].send(JSON.stringify(response));
         }
         if (
           newMessage?.action === "block_user" ||
@@ -123,8 +134,8 @@ module.exports = (server) => {
             newBlockListForBlocker,
             category: "block_list_for_blocker",
           };
-          usersOnline[parties[0]].send(JSON.stringify(newBlockListResult));
-          usersOnline[parties[1]].send(
+          usersOnline?.[parties[0]].send(JSON.stringify(newBlockListResult));
+          usersOnline?.[parties[1]].send(
             JSON.stringify(newBlockListForBlockerResult)
           );
           userUpdate = {
@@ -136,7 +147,7 @@ module.exports = (server) => {
       });
 
       webSocketConnection.on("close", async function (connection) {
-        delete usersOnline[jwtContent.email];
+        delete usersOnline[jwtContent?.email];
         userUpdate = {
           usersOnline: Object?.getOwnPropertyNames(usersOnline),
           category: "users_update",
