@@ -15,7 +15,11 @@ module.exports = (server) => {
 
   const sendMessage = (data) => {
     Object.keys(usersOnline).map((client) => {
-      usersOnline[client]?.send(JSON.stringify(data));
+      try{
+        usersOnline[client]?.send(JSON.stringify(data));
+      }catch(err){
+        
+      }
     });
   };
 
