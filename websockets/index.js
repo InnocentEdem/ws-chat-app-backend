@@ -62,7 +62,7 @@ module.exports = (server) => {
       webSocketConnection.id = jwtContent?.email;
       webSocketConnection.currentToken = connectionParams?.check;
 
-      usersOnline?.[jwtContent?.email] = webSocketConnection;
+      usersOnline[jwtContent?.email] = webSocketConnection;
 
       let blockListResult = {
         blockList,
