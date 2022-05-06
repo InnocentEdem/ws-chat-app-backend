@@ -20,8 +20,10 @@ const PORT = process.env.PORT || 5003
 const server = app.listen(PORT,()=>{
   console.log("App listening");
 })
-app.options(cors());
-app.use(cors())
+
+app.use(cors({
+  origin: '*'
+}));
 
 var jwtCheck = jwt({
       secret: jwks.expressJwtSecret({
