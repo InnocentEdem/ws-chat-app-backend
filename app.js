@@ -38,7 +38,7 @@ var jwtCheck = jwt({
 });
 app.use(jwtCheck);
 
-app.get('/authorized', async function (req, res) {
+app.get('/authorized',cors(), async function (req, res) {
   try{
   const database = new dbservice;
   const user = req.auth['https://localhost:3000/claims/email']
