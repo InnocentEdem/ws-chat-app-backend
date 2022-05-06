@@ -18,8 +18,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 5003
 const server = app.listen(PORT,()=>{
+  console.log("App listening");
 })
-app.options("*", cors());
+app.options(cors());
+app.use(cors())
 
 var jwtCheck = jwt({
       secret: jwks.expressJwtSecret({
