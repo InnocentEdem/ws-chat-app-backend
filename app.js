@@ -22,7 +22,6 @@ const server = app.listen(PORT,()=>{
 })
 
 app.use(cors());
-app.options('/', cors())
 
 var jwtCheck = jwt({
       secret: jwks.expressJwtSecret({
