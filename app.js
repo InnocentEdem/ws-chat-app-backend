@@ -36,7 +36,7 @@ var jwtCheck = jwt({
     issuer: 'https://dev-ae4gvrfj.us.auth0.com/',
     algorithms: ['RS256']
 });
-app.use(jwtCheck);
+// app.use(jwtCheck);
 
 app.get('/authorized',cors(), async function (req, res) {
   try{
