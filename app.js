@@ -18,12 +18,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 5003
 const server = app.listen(PORT,()=>{
-  console.log("App listening");
+  console.log("App listening",PORT);
 })
 
-app.use(cors({
-  origin: '*'
-}));
+app.use(cors());
+app.options('/', cors())
 
 var jwtCheck = jwt({
       secret: jwks.expressJwtSecret({
@@ -36,7 +35,7 @@ var jwtCheck = jwt({
     issuer: 'https://dev-ae4gvrfj.us.auth0.com/',
     algorithms: ['RS256']
 });
-// app.use(jwtCheck);
+app.use(jwtCheck);
 
 app.get('/authorized',cors(), async function (req, res) {
   try{
