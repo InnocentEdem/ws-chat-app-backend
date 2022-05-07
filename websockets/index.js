@@ -13,7 +13,7 @@ module.exports = (server) => {
     path: "/websockets",
   });
 
-  const sendMessage = (data) => {
+  const broadcastMessage = (data) => {
     Object.keys(usersOnline)?.map((client) => {
       try {
         if (usersOnline?.[client]) {
@@ -22,6 +22,18 @@ module.exports = (server) => {
       } catch (err) {}
     });
   };
+  const sendToOne=(emailId,data)=>{
+    for(const key in usersOnline){
+      if(key === emailId){
+        try{
+          usersOnline?.[key]?.send(JSON.stringify(data))
+          console.log("sent");
+        }catch(err){
+          console.log(err);
+        }
+      }
+    }
+  }
 
   server.on("upgrade", async (request, socket, head) => {
     const [_path, params] = request?.url?.split("?");
@@ -91,7 +103,7 @@ module.exports = (server) => {
       webSocketConnection.send(JSON.stringify(blockListResult));
       webSocketConnection.send(JSON.stringify(blockListForBlockerResult));
       webSocketConnection.send(JSON.stringify(allMessagesResult));
-      sendMessage(userUpdate); 
+      broadcastMessage(userUpdate); 
       webSocketConnection.send(JSON.stringify(userUpdate));
 
       webSocketConnection.on("message", async (message) => {
@@ -102,30 +114,18 @@ module.exports = (server) => {
 
         if (newMessage?.action === "send_new_message") {
             parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,];
-          try{
-            if(usersOnline?.[parties?.[0]]){
-              usersOnline?.[parties?.[0]].send(JSON.stringify({sent_to:parties[1],category:"new_message"}))
-           }
-           if(usersOnline?.[parties?.[1]]){
-            usersOnline?.[parties?.[1]].send(JSON.stringify({sent_by:parties[0],category:"sent_success"}))
-           }
-          }catch(err){
-            console.log(err);
-          }
+              sendToOne(parties?.[0], {sent_to:parties[1],category:"new_message"})
+              sendToOne(parties?.[1], {sent_by:parties[0],category:"sent_success"})
         }
         //pingpong implementation
         if (newMessage.action === "do_not_sleep") {
           userUpdate = { usersOnline: "Not needed",category: "do_not_sleep",};
-          sendMessage(JSON.stringify(userUpdate));
+          broadcastMessage(JSON.stringify(userUpdate));
         }
 
         if(newMessage?.action==="fetch_one_chat"){
-          parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,]          
-          try{
-            usersOnline[parties[0]].send(JSON.stringify({category:"message",subject:newMessage.sent_to,content:response}))
-          }catch(err){
-            console.log(err);
-          }
+          parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,] 
+          sendToOne(parties[0], {category:"message",subject:newMessage.sent_to,content:response})         
         }
         
         if (
@@ -149,7 +149,7 @@ module.exports = (server) => {
             usersOnline?.[parties[0]].send(JSON.stringify(newBlockListResult));
             usersOnline?.[parties[1]].send(JSON.stringify(newBlockListForBlockerResult));
             userUpdate = {usersOnline: Object?.getOwnPropertyNames(usersOnline),category: "users_update"};
-            sendMessage(userUpdate);
+            broadcastMessage(userUpdate);
           }catch(err){
            console.log(err);
           }
@@ -163,7 +163,7 @@ module.exports = (server) => {
           category: "users_update",
         };
         try{
-          sendMessage(userUpdate);
+          broadcastMessage(userUpdate);
         }catch(err){
          console.log(err);
         }
