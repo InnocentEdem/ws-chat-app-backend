@@ -49,7 +49,7 @@ module.exports = (server) => {
       if (jwtContent?.expired) {
         return;
       }
-      const remove = await database.removeFromWhiteList(
+      await database.removeFromWhiteList(
         connectionParams?.check
       );
       const blockListForBlocker = await handleResponse({
@@ -60,11 +60,21 @@ module.exports = (server) => {
         payload: { user_blocked: jwtContent?.email },
         action: "fetch_user_block_list",
       });
+
+      const allMessages = await handleResponse({
+        payload: { user_email: jwtContent?.email },
+        action: "fetch_all_user_messages",
+      });
+
       webSocketConnection.id = jwtContent?.email;
       webSocketConnection.currentToken = connectionParams?.check;
 
       usersOnline[jwtContent?.email] = webSocketConnection;
       //preparing initial responses
+      let allMessagesResult = {
+        allMessages,
+        category: "all_messages",
+      };
       let blockListResult = {
         blockList,
         category: "block_list",
@@ -80,30 +90,29 @@ module.exports = (server) => {
       //send initial message
       webSocketConnection.send(JSON.stringify(blockListResult));
       webSocketConnection.send(JSON.stringify(blockListForBlockerResult));
-      sendMessage(userUpdate); //broadcast user update
-      //make sure blocklist is implemented
+      webSocketConnection.send(JSON.stringify(allMessagesResult));
+      sendMessage(userUpdate); 
       webSocketConnection.send(JSON.stringify(userUpdate));
 
       webSocketConnection.on("message", async (message) => {
         //message handler using livemessage controller
         const newMessage = JSON.parse(message);
 
-        const useControllers = async () => {
-          const response = await handleResponse({
-            payload: newMessage.payload,
-            action: newMessage.action,
-          });
-          return response;
-        };
-
+        const response = await handleResponse({payload: newMessage.payload, action: newMessage.action});
 
         if (newMessage?.action === "send_new_message") {
-          parties = [newMessage?.payload.sent_to, newMessage?.payload.sent_by];
-        }
-        //save sender and recipient
-        if (
-          newMessage?.action === "block_user" || newMessage?.action === "unblock_user") {
-          parties = [ newMessage?.payload.user_blocked, newMessage?.payload.blocked_by];
+          parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,];
+          try{
+            if(usersOnline?.[parties?.[0]]){
+              parties[0].send(JSON.stringify({sent_by:parties[1],category:"new_message"}))
+           }
+           if(usersOnline?.[parties?.[1]]){
+              parties[1].send(JSON.stringify({message:responses[0],category:"sent_success"}))
+           }
+          }catch(err){
+            console.log(err);
+          }
+          
         }
         //pingpong implementation
         if (newMessage.action === "do_not_sleep") {
@@ -112,18 +121,12 @@ module.exports = (server) => {
         }
 
         if(newMessage?.action==="fetch_one_chat"){
-          const response = useControllers()
-          webSocketConnection.send(JSON.stringify(response))
+          webSocketConnection.send(JSON.stringify({category:"message",subject:newMessage.sent_to,content:response}))
         }
         
-        if (newMessage?.action === "send_new_message") {
-          const response = useControllers();
-          usersOnline?.[parties[0]] && usersOnline?.[parties[0]].send(JSON.stringify(response));
-          usersOnline?.[parties[1]] && usersOnline?.[parties[1]].send(JSON.stringify(response));
-        }
-
         if (
           newMessage?.action === "block_user" || newMessage?.action === "unblock_user") {
+            parties = [ newMessage?.payload.user_blocked, newMessage?.payload.blocked_by];
           const newBlockList = await handleResponse({
             payload: { user_blocked: parties[0] },
             action: "fetch_user_block_list",
@@ -136,20 +139,18 @@ module.exports = (server) => {
             blockList: newBlockList,
             category: "block_list",
           };
-          let newBlockListForBlockerResult = {
-            newBlockListForBlocker,
-            category: "block_list_for_blocker",
-          };
-          usersOnline?.[parties[0]].send(JSON.stringify(newBlockListResult));
-          usersOnline?.[parties[1]].send(
-            JSON.stringify(newBlockListForBlockerResult)
-          );
-          userUpdate = {
-            usersOnline: Object?.getOwnPropertyNames(usersOnline),
-            category: "users_update",
-          };
-          sendMessage(userUpdate);
+
+          try{
+            let newBlockListForBlockerResult = {newBlockListForBlocker, category: "block_list_for_blocker"};
+            usersOnline?.[parties[0]].send(JSON.stringify(newBlockListResult));
+            usersOnline?.[parties[1]].send(JSON.stringify(newBlockListForBlockerResult));
+            userUpdate = {usersOnline: Object?.getOwnPropertyNames(usersOnline),category: "users_update"};
+            sendMessage(userUpdate);
+          }catch(err){
+           console.log(err);
+          }
         }
+      
       });
 
       webSocketConnection.on("close", async function (connection) {
@@ -158,7 +159,12 @@ module.exports = (server) => {
           usersOnline: Object?.getOwnPropertyNames(usersOnline),
           category: "users_update",
         };
-        sendMessage(userUpdate);
+        try{
+          sendMessage(userUpdate);
+        }catch(err){
+         console.log(err);
+        }
+        
       });
     }
   );
