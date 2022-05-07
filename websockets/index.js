@@ -123,7 +123,7 @@ module.exports = (server) => {
         if(newMessage?.action==="fetch_one_chat"){
           console.log(parties)
           try{
-            usersOnline[newMessage?.sent_by].send(JSON.stringify({category:"message",subject:newMessage.sent_to,content:response}))
+            usersOnline?.[parties[0]?.sent_by].send(JSON.stringify({category:"message",subject:newMessage.sent_to,content:response}))
           }catch(err){
             console.log(err);
           }
