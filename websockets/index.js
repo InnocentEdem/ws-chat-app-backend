@@ -83,6 +83,7 @@ module.exports = (server) => {
       webSocketConnection.send(JSON.stringify(userUpdate));
 
       webSocketConnection.on("message", async (message) => {
+
         const newMessage = JSON.parse(message);
         if (newMessage?.action === "send_new_message") {
           parties = [newMessage?.payload.sent_to, newMessage?.payload.sent_by];
@@ -110,6 +111,13 @@ module.exports = (server) => {
           });
           return response;
         };
+
+        if(newMessage?.action==="fetch_one_chat"){
+          const response = useControllers()
+          webSocketConnection.send(JSON.stringify(response))
+        }
+
+        // ;
         
         if (newMessage?.action === "send_new_message") {
           const response = useControllers();
