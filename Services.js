@@ -36,9 +36,10 @@ class UserServices {
   }
   async fetchAllUserMessages(email) {
     try {
-      return await Message.findAll({
+      const result =  await Message.findAll({
         where: { [Op.or]: [{ sent_by: email }, { sent_to: email }] },
       });
+      return result
     } catch (err) {}
   }
   async updateMessages( sent_by, sent_to, msg_text ) {
