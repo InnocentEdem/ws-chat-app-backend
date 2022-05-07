@@ -97,7 +97,6 @@ module.exports = (server) => {
       webSocketConnection.on("message", async (message) => {
         //message handler using livemessage controller
         const newMessage = JSON.parse(message);
-        parties=[newMessage?.payload]
 
         const response = await handleResponse({payload: newMessage.payload, action: newMessage.action});
 
@@ -121,9 +120,9 @@ module.exports = (server) => {
         }
 
         if(newMessage?.action==="fetch_one_chat"){
-          console.log(parties,parties[0]?.sent_by)
+          parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,]          
           try{
-            usersOnline[parties[0]?.sent_by].send(JSON.stringify({category:"message",subject:newMessage.sent_to,content:response}))
+            usersOnline[parties[0]].send(JSON.stringify({category:"message",subject:newMessage.sent_to,content:response}))
           }catch(err){
             console.log(err);
           }
