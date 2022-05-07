@@ -42,6 +42,7 @@ module.exports = (server) => {
     "connection",
     async function connection(webSocketConnection, connectionRequest) {
       // webSocketConnection.id = "kojovi"
+      //pre-admission handling
       const [_path, params] = connectionRequest?.url?.split("?");
       const connectionParams = queryString.parse(params);
       const jwtContent = decoder(connectionParams?.check);
@@ -63,7 +64,7 @@ module.exports = (server) => {
       webSocketConnection.currentToken = connectionParams?.check;
 
       usersOnline[jwtContent?.email] = webSocketConnection;
-
+      //preparing initial responses
       let blockListResult = {
         blockList,
         category: "block_list",
@@ -76,34 +77,17 @@ module.exports = (server) => {
         usersOnline: Object.getOwnPropertyNames(usersOnline),
         category: "users_update",
       };
+      //send initial message
       webSocketConnection.send(JSON.stringify(blockListResult));
       webSocketConnection.send(JSON.stringify(blockListForBlockerResult));
-      sendMessage(userUpdate);
-
+      sendMessage(userUpdate); //broadcast user update
+      //make sure blocklist is implemented
       webSocketConnection.send(JSON.stringify(userUpdate));
 
       webSocketConnection.on("message", async (message) => {
-
+        //message handler using livemessage controller
         const newMessage = JSON.parse(message);
-        if (newMessage?.action === "send_new_message") {
-          parties = [newMessage?.payload.sent_to, newMessage?.payload.sent_by];
-        }
-        if (
-          newMessage?.action === "block_user" ||
-          newMessage?.action === "unblock_user"
-        ) {
-          parties = [
-            newMessage?.payload.user_blocked,
-            newMessage?.payload.blocked_by,
-          ];
-        }
-        if (newMessage.action === "do_not_sleep") {
-          userUpdate = {
-            usersOnline: "Not needed",
-            category: "do_not_sleep",
-          };
-          sendMessage(userUpdate);
-        }
+
         const useControllers = async () => {
           const response = await handleResponse({
             payload: newMessage.payload,
@@ -112,23 +96,34 @@ module.exports = (server) => {
           return response;
         };
 
+
+        if (newMessage?.action === "send_new_message") {
+          parties = [newMessage?.payload.sent_to, newMessage?.payload.sent_by];
+        }
+        //save sender and recipient
+        if (
+          newMessage?.action === "block_user" || newMessage?.action === "unblock_user") {
+          parties = [ newMessage?.payload.user_blocked, newMessage?.payload.blocked_by];
+        }
+        //pingpong implementation
+        if (newMessage.action === "do_not_sleep") {
+          userUpdate = { usersOnline: "Not needed",category: "do_not_sleep",};
+          sendMessage(JSON.stringify(userUpdate));
+        }
+
         if(newMessage?.action==="fetch_one_chat"){
           const response = useControllers()
           webSocketConnection.send(JSON.stringify(response))
         }
-
-        // ;
         
         if (newMessage?.action === "send_new_message") {
           const response = useControllers();
-
-          usersOnline?.[parties[0]] &&
-            usersOnline?.[parties[0]].send(JSON.stringify(response));
+          usersOnline?.[parties[0]] && usersOnline?.[parties[0]].send(JSON.stringify(response));
+          usersOnline?.[parties[1]] && usersOnline?.[parties[1]].send(JSON.stringify(response));
         }
+
         if (
-          newMessage?.action === "block_user" ||
-          newMessage?.action === "unblock_user"
-        ) {
+          newMessage?.action === "block_user" || newMessage?.action === "unblock_user") {
           const newBlockList = await handleResponse({
             payload: { user_blocked: parties[0] },
             action: "fetch_user_block_list",
