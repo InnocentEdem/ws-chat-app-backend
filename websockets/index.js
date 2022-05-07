@@ -120,7 +120,7 @@ module.exports = (server) => {
         }
 
         if(newMessage?.action==="fetch_one_chat"){
-          webSocketConnection.send(JSON.stringify({category:"message",subject:newMessage.sent_to,content:response}))
+          usersOnline[newMessage?.sent_by].send(JSON.stringify({category:"message",subject:newMessage.sent_to,content:response}))
         }
         
         if (
