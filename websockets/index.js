@@ -101,18 +101,17 @@ module.exports = (server) => {
         const response = await handleResponse({payload: newMessage.payload, action: newMessage.action});
 
         if (newMessage?.action === "send_new_message") {
-          parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,];
+            parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,];
           try{
             if(usersOnline?.[parties?.[0]]){
-              parties[0].send(JSON.stringify({sent_by:parties[1],category:"new_message"}))
+              usersOnline?.[parties?.[0]].send(JSON.stringify({sent_to:parties[1],category:"new_message"}))
            }
            if(usersOnline?.[parties?.[1]]){
-              parties[1].send(JSON.stringify({message:responses[0],category:"sent_success"}))
+            usersOnline?.[parties?.[1]].send(JSON.stringify({sent_by:parties[0],category:"sent_success"}))
            }
           }catch(err){
             console.log(err);
           }
-          
         }
         //pingpong implementation
         if (newMessage.action === "do_not_sleep") {
@@ -150,7 +149,6 @@ module.exports = (server) => {
            console.log(err);
           }
         }
-      
       });
 
       webSocketConnection.on("close", async function (connection) {
