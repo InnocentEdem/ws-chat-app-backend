@@ -110,8 +110,7 @@ module.exports = (server) => {
           });
           return response;
         };
-
-        webSocketConnection.send(JSON.stringify(response));
+        
         if (newMessage?.action === "send_new_message") {
           const response = useControllers();
 
