@@ -114,8 +114,8 @@ module.exports = (server) => {
 
         if (newMessage?.action === "send_new_message") {
             parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,];
-              sendToOne(parties?.[0], {sent_to:parties[1],category:"new_message"})
-              sendToOne(parties?.[1], {sent_by:parties[0],category:"sent_success"})
+              sendToOne(parties?.[1], {sent_by:parties[0],category:"new_message"})
+              sendToOne(parties?.[0], {sent_to:parties[1],category:"sent_success"})
         }
         //pingpong implementation
         if (newMessage.action === "do_not_sleep") {
@@ -146,8 +146,8 @@ module.exports = (server) => {
 
           try{
             let newBlockListForBlockerResult = {newBlockListForBlocker, category: "block_list_for_blocker"};
-            usersOnline?.[parties[0]].send(JSON.stringify(newBlockListResult));
-            usersOnline?.[parties[1]].send(JSON.stringify(newBlockListForBlockerResult));
+            sendToOne(parties[0],newBlockListResult)
+            sendToOne(parties[1],newBlockListForBlockerResult)
             userUpdate = {usersOnline: Object?.getOwnPropertyNames(usersOnline),category: "users_update"};
             broadcastMessage(userUpdate);
           }catch(err){
