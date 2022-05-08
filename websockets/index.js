@@ -36,6 +36,7 @@ module.exports = (server) => {
   }
 
   server.on("upgrade", async (request, socket, head) => {
+    console.log(request)
     const [_path, params] = request?.url?.split("?");
     const connectionParams = queryString.parse(params);
 
