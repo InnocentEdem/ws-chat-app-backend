@@ -7,6 +7,8 @@ module.exports = (server) => {
   const database = new dbservice();
   const usersOnline = {};
   let parties = [];
+  const setIntervals = {}
+  const waitingList = []
 
   const webSocketServer = new webSocket.Server({
     noServer: true,
@@ -27,7 +29,6 @@ module.exports = (server) => {
       if(key === emailId){
         try{
           usersOnline?.[key]?.send(JSON.stringify(data))
-          console.log("sent");
         }catch(err){
           console.log(err);
         }
@@ -35,8 +36,26 @@ module.exports = (server) => {
     }
   }
 
+  const KeepAlive=(clientEmail)=>{
+
+    const data = {category:"keep_alive"}
+    setIntervals[clientEmail] = setInterval(()=>{
+      sendToOne(clientEmail,data)
+      waitingList.push(clientEmail)
+      console.log(`"ping"-------------------------------->`,clientEmail);
+      setTimeout(()=>{
+        if(waitingList.includes(clientEmail)){
+          clearInterval(setIntervals[clientEmail])
+        }
+
+      },500)
+    },4500)
+  }
+
+
   server.on("upgrade", async (request, socket, head) => {
-    console.log(request)
+    // console.log(request)
+    // socket.setHeader()
     const [_path, params] = request?.url?.split("?");
     const connectionParams = queryString.parse(params);
 
@@ -65,6 +84,7 @@ module.exports = (server) => {
       await database.removeFromWhiteList(
         connectionParams?.check
       );
+      KeepAlive(jwtContent?.email);
       const blockListForBlocker = await handleResponse({
         payload: { blocked_by: jwtContent?.email },
         action: "fetch_all_users_blocked",
@@ -127,6 +147,14 @@ module.exports = (server) => {
         if(newMessage?.action==="fetch_one_chat"){
           parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,] 
           sendToOne(parties[0], {category:"message",subject:newMessage.sent_to,content:response})         
+        }
+        if(newMessage?.action==="keep_alive"){
+          console.log(newMessage?.payload,`replied ---------------->"pong"`);
+          try{
+            waitingList.splice(waitingList.indexOf(newMessage.user),1)
+          }catch(err){
+            console.log(err);
+          }
         }
         
         if (
