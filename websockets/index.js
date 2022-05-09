@@ -205,7 +205,13 @@ module.exports = (server) => {
       });
 
       webSocketConnection.on("close", async function (_connection) {
-        delete usersOnline[jwtContent?.email];
+        try {
+          delete usersOnline[jwtContent?.email];
+          delete pongTracker[jwtContent?.email];
+          clearInterval(setIntervals[jwtContent?.email])
+        } catch (error) {
+          
+        }
         userUpdate = {
           usersOnline: Object?.getOwnPropertyNames(usersOnline),
           category: "users_update",
