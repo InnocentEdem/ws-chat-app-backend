@@ -9,6 +9,7 @@ module.exports = (server) => {
   let parties = [];
   const setIntervals = {}
   const waitingList = []
+  const pingTracker ={}
 
   const webSocketServer = new webSocket.Server({
     noServer: true,
@@ -36,20 +37,28 @@ module.exports = (server) => {
     }
   }
 
-  const KeepAlive=(clientEmail)=>{
-
-    const data = {category:"keep_alive"}
-    setIntervals[clientEmail] = setInterval(()=>{
-      sendToOne(clientEmail,data)
-      waitingList.push(clientEmail)
-      console.log(`"ping"-------------------------------->`,clientEmail);
-      setTimeout(()=>{
-        if(waitingList.includes(clientEmail)){
-          clearInterval(setIntervals[clientEmail])
+  const KeepAlive = (clientEmail) => {
+    try {
+      const data = { category: "keep_alive" }
+      pingTracker[clientEmail] = 0
+      setIntervals[clientEmail] = setInterval(() => {
+        sendToOne(clientEmail, data)
+        pingTracker[clientEmail] += 1
+        if(pingTracker[clientEmail]===10){
+          pingTracker[clientEmail]=0;
+          console.log(`ping ------------------>${clientEmail}`);
         }
-
-      },500)
-    },4500)
+        waitingList.push(clientEmail)
+        setTimeout(() => {
+          if (waitingList.includes(clientEmail)) {
+            clearInterval(setIntervals[clientEmail])
+            console.log(`${clientEmail} connection inactive`)
+          }
+        }, 1500)
+      }, 3000)
+    } catch (err) {
+      console.log(err);
+    }
   }
 
 
