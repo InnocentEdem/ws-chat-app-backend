@@ -38,28 +38,53 @@ module.exports = (server) => {
       }
     }
   }
+  const removeFromActiveList =(clientEmail)=>{
+    try {
+      clearInterval(setIntervals[clientEmail])
+      delete usersOnline[clientEmail];
+      delete pingTracker[clientEmail];
+      delete pongTracker[clientEmail];
+      console.log(`${clientEmail} connection inactive`)
+      
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  const updateCountByOne=(existingObject,key)=>{
+    existingObject [key] += 1
+
+  }
+  const nullifyCount = (existingObject,key) =>{
+    existingObject[key] = 0
+  }
+
+  const createNewKey=(existingObject,key,value)=>{
+    if(typeof existingObject === "Array"){
+      existingObject.forEach((element,index)=>{
+          element[key[index]] = value[index]
+      })
+    }
+    else{
+      existingObject[key] = value
+    }
+  }
 
   const KeepAlive = (clientEmail) => {
     try {
       const data = { category: "keep_alive" }
-      pingTracker[clientEmail] = 0
-      pongTracker[clientEmail] = 0
+      createNewKey([pingTracker,pongTracker],[clientEmail,clientEmail],[0,0])
 
       setIntervals[clientEmail] = setInterval(() => {
         sendToOne(clientEmail, data)
-        pingTracker[clientEmail] += 1
-
+        updateCountByOne(pingTracker,clientEmail)
         if(pingTracker[clientEmail]===10){
-          pingTracker[clientEmail]=0;
+          nullifyCount(pingTracker,clientEmail)
           console.log(`ping ------------------>${clientEmail}`);
         }
         waitingList.push(clientEmail)
         setTimeout(() => {
           if (waitingList.includes(clientEmail)) {
-            clearInterval(setIntervals[clientEmail])
-            delete pingTracker[clientEmail];
-            delete pongTracker[clientEmail];
-            console.log(`${clientEmail} connection inactive`)
+           removeFromActiveList(clientEmail)
           }
         }, 1500)
       }, 3000)
@@ -95,9 +120,7 @@ module.exports = (server) => {
       if (jwtContent?.expired) {
         return;
       }
-      await database.removeFromWhiteList(
-        connectionParams?.check
-      );
+      await database.removeFromWhiteList( connectionParams?.check);
       KeepAlive(jwtContent?.email);
       const blockListForBlocker = await handleResponse({
         payload: { blocked_by: jwtContent?.email },
@@ -115,25 +138,13 @@ module.exports = (server) => {
 
       webSocketConnection.id = jwtContent?.email;
       webSocketConnection.currentToken = connectionParams?.check;
-
+      createNewKey(usersOnline,jwtContent?.email,webSocketConnection)
       usersOnline[jwtContent?.email] = webSocketConnection;
       //preparing initial responses
-      let allMessagesResult = {
-        allMessages,
-        category: "all_messages",
-      };
-      let blockListResult = {
-        blockList,
-        category: "block_list",
-      };
-      let blockListForBlockerResult = {
-        blockListForBlocker,
-        category: "block_list_for_blocker",
-      };
-      let userUpdate = {
-        usersOnline: Object.getOwnPropertyNames(usersOnline),
-        category: "users_update",
-      };
+      let allMessagesResult = { allMessages,category: "all_messages",};
+      let blockListResult = { blockList,category: "block_list",};
+      let blockListForBlockerResult = {blockListForBlocker,category: "block_list_for_blocker",};
+      let userUpdate = { usersOnline: Object.getOwnPropertyNames(usersOnline),category: "users_update",};
       //send initial message
       webSocketConnection.send(JSON.stringify(blockListResult));
       webSocketConnection.send(JSON.stringify(blockListForBlockerResult));
@@ -144,7 +155,6 @@ module.exports = (server) => {
       webSocketConnection.on("message", async (message) => {
         //message handler using livemessage controller
         const newMessage = JSON.parse(message);
-
         const response = await handleResponse({payload: newMessage.payload, action: newMessage.action});
 
         if (newMessage?.action === "send_new_message") {
@@ -166,7 +176,7 @@ module.exports = (server) => {
           try{
            const id = newMessage?.payload
            pongTracker[id] +=1
-           if(pongTracker[id] > 10){
+           if(pongTracker[id] > 20){
             console.log(id,`replied ---------------->"pong"`);
             pongTracker[id] = 0
           }
@@ -187,11 +197,7 @@ module.exports = (server) => {
             payload: { blocked_by: parties[1] },
             action: "fetch_all_users_blocked",
           });
-          let newBlockListResult = {
-            blockList: newBlockList,
-            category: "block_list",
-          };
-
+          let newBlockListResult = {blockList: newBlockList,category: "block_list",};
           try{
             let newBlockListForBlockerResult = {newBlockListForBlocker, category: "block_list_for_blocker"};
             sendToOne(parties[0],newBlockListResult)
@@ -206,11 +212,9 @@ module.exports = (server) => {
 
       webSocketConnection.on("close", async function (_connection) {
         try {
-          delete usersOnline[jwtContent?.email];
-          delete pongTracker[jwtContent?.email];
-          clearInterval(setIntervals[jwtContent?.email])
+          removeFromActiveList(jwtContent?.email)
         } catch (error) {
-          
+          console.log(error);
         }
         userUpdate = {
           usersOnline: Object?.getOwnPropertyNames(usersOnline),
