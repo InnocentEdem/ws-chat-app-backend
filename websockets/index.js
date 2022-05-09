@@ -10,6 +10,8 @@ module.exports = (server) => {
   const setIntervals = {}
   const waitingList = []
   const pingTracker ={}
+  const pongTracker ={}
+
 
   const webSocketServer = new webSocket.Server({
     noServer: true,
@@ -41,9 +43,12 @@ module.exports = (server) => {
     try {
       const data = { category: "keep_alive" }
       pingTracker[clientEmail] = 0
+      pongTracker[clientEmail] = 0
+
       setIntervals[clientEmail] = setInterval(() => {
         sendToOne(clientEmail, data)
         pingTracker[clientEmail] += 1
+
         if(pingTracker[clientEmail]===10){
           pingTracker[clientEmail]=0;
           console.log(`ping ------------------>${clientEmail}`);
@@ -52,6 +57,8 @@ module.exports = (server) => {
         setTimeout(() => {
           if (waitingList.includes(clientEmail)) {
             clearInterval(setIntervals[clientEmail])
+            delete pingTracker[clientEmail];
+            delete pongTracker[clientEmail];
             console.log(`${clientEmail} connection inactive`)
           }
         }, 1500)
@@ -63,8 +70,7 @@ module.exports = (server) => {
 
 
   server.on("upgrade", async (request, socket, head) => {
-    // console.log(request)
-    // socket.setHeader()
+
     const [_path, params] = request?.url?.split("?");
     const connectionParams = queryString.parse(params);
 
@@ -82,8 +88,7 @@ module.exports = (server) => {
   webSocketServer.on(
     "connection",
     async function connection(webSocketConnection, connectionRequest) {
-      // webSocketConnection.id = "kojovi"
-      //pre-admission handling
+
       const [_path, params] = connectionRequest?.url?.split("?");
       const connectionParams = queryString.parse(params);
       const jwtContent = decoder(connectionParams?.check);
@@ -158,8 +163,13 @@ module.exports = (server) => {
           sendToOne(parties[0], {category:"message",subject:newMessage.sent_to,content:response})         
         }
         if(newMessage?.action==="keep_alive"){
-          console.log(newMessage?.payload,`replied ---------------->"pong"`);
           try{
+           const id = newMessage?.payload
+           pongTracker[id] +=1
+           if(pongTracker[id] > 10){
+            console.log(id,`replied ---------------->"pong"`);
+            pongTracker[id] = 0
+          }
             waitingList.splice(waitingList.indexOf(newMessage.user),1)
           }catch(err){
             console.log(err);
@@ -194,7 +204,7 @@ module.exports = (server) => {
         }
       });
 
-      webSocketConnection.on("close", async function (connection) {
+      webSocketConnection.on("close", async function (_connection) {
         delete usersOnline[jwtContent?.email];
         userUpdate = {
           usersOnline: Object?.getOwnPropertyNames(usersOnline),
