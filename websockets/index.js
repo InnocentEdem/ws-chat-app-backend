@@ -112,6 +112,10 @@ module.exports = (server) => {
         payload: { user_email: jwtContent?.email },
         action: "fetch_all_user_messages",
       });
+      const allUsers = await handleResponse({
+        payload:{user:jwtContent?.email},
+        action: "fetch_all_users"
+      })
 
       webSocketConnection.id = jwtContent?.email;
       webSocketConnection.currentToken = connectionParams?.check;
@@ -134,10 +138,15 @@ module.exports = (server) => {
         usersOnline: Object.getOwnPropertyNames(usersOnline),
         category: "users_update",
       };
+      let allUsersUpdate = {
+        allUsers,
+        category:"fetch_all_users"
+      }
       //send initial message
       webSocketConnection.send(JSON.stringify(blockListResult));
       webSocketConnection.send(JSON.stringify(blockListForBlockerResult));
       webSocketConnection.send(JSON.stringify(allMessagesResult));
+      webSocketConnection.send(JSON.stringify(allUsersUpdate));
       broadcastMessage(userUpdate); 
       webSocketConnection.send(JSON.stringify(userUpdate));
 

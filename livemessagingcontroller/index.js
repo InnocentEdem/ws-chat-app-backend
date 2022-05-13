@@ -7,6 +7,7 @@ const fetchUserBlockList = require("./fetchUserBlockList")
 const blockUser = require("./blockUser")
 const unblockUser = require("./unblockUser")
 const fetchAllUsersBlockedByUser = require("./fetchAllUsersBlockedByUser")
+const fetchAllUsers = require("./fetchAllUsers")
 
  module.exports = async ({payload,action}) =>{
 
@@ -18,6 +19,7 @@ const fetchAllUsersBlockedByUser = require("./fetchAllUsersBlockedByUser")
     case "block_user" : return blockUser(payload)
     case "unblock_user" : return unblockUser(payload)
     case "fetch_all_users_blocked" : return fetchAllUsersBlockedByUser(payload)
+    case "fetch_all_users" : return fetchAllUsers(payload)
   }
 
 }
