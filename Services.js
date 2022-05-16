@@ -1,4 +1,4 @@
-const { User, WhiteList, Group, Message,Block } = require("./models")
+const { User, WhiteList, Group, Message,Block, New_message } = require("./models")
 const { Op } = require("sequelize");
 
 class UserServices {
@@ -83,6 +83,37 @@ class UserServices {
        }
              });
       return result
+    } catch (err) {}
+  }
+  async saveToNewMessage(sent_by,sent_to,msg_text) {
+    
+    try {
+      await New_message.create({
+       where:{
+        sent_by,
+        sent_to,
+        message:msg_text
+       }
+             });
+    } catch (err) {}
+  }
+  async fetchFromNewMessages(sent_to) {
+    try {
+     const result =  await New_message.findAll({
+       where:{
+        sent_to,
+       }
+             });
+      return result
+    } catch (err) {}
+  }
+  async removeFromNewMessages(sent_to) {
+    try {
+     await New_message.destroy({
+       where:{
+        sent_to,
+       }
+             });
     } catch (err) {}
   }
   async fetchUsersBlockedByUser(blocked_by) {

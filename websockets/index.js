@@ -116,6 +116,10 @@ module.exports = (server) => {
         payload:{user:jwtContent?.email},
         action: "fetch_all_users"
       })
+      let newUserMessagesOnLogin = await handleResponse({
+        payload:{sent_to:jwtContent?.email},
+        action: "fetch_new_messages"
+      })
 
       webSocketConnection.id = jwtContent?.email;
       webSocketConnection.currentToken = connectionParams?.check;
@@ -142,11 +146,16 @@ module.exports = (server) => {
         allUsers,
         category:"fetch_all_users"
       }
+      let newMessagesOnLogin = {
+        newUserMessagesOnLogin,
+        category:"fetch_new_messages"
+      }
       //send initial message
       webSocketConnection.send(JSON.stringify(blockListResult));
       webSocketConnection.send(JSON.stringify(blockListForBlockerResult));
       webSocketConnection.send(JSON.stringify(allMessagesResult));
       webSocketConnection.send(JSON.stringify(allUsersUpdate));
+      webSocketConnection.send(JSON.stringify(newMessagesOnLogin));
       broadcastMessage(userUpdate); 
       webSocketConnection.send(JSON.stringify(userUpdate));
 
@@ -160,16 +169,21 @@ module.exports = (server) => {
             parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,];
               sendToOne(parties?.[1], {sent_by:parties[0],category:"new_message"})
               sendToOne(parties?.[0], {sent_to:parties[1],category:"sent_success"})
+              handleResponse({payload:newMessage.payload,action:"add_to_new_messages"})
         }
         //pingpong implementation
-        if (newMessage.action === "do_not_sleep") {
-          userUpdate = { usersOnline: "Not needed",category: "do_not_sleep",};
-          broadcastMessage(JSON.stringify(userUpdate));
-        }
 
         if(newMessage?.action==="fetch_one_chat"){
           parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,] 
           sendToOne(parties[0], {category:"message",subject:newMessage.sent_to,content:response})         
+        }
+        if(newMessage?.action==="remove_from_new_messages"){
+          parties = [ newMessage?.payload.sent_by,newMessage?.payload.sent_to,] 
+          newUserMessagesOnLogin = await handleResponse({
+            payload:{sent_to:parties[0]},
+            action: "fetch_new_messages"
+          })
+          sendToOne(parties[1], {newUserMessagesOnLogin, category:"fetch_new_messages" })         
         }
         if(newMessage?.action==="keep_alive"){
           try{

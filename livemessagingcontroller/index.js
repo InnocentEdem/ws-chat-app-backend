@@ -7,7 +7,10 @@ const fetchUserBlockList = require("./fetchUserBlockList")
 const blockUser = require("./blockUser")
 const unblockUser = require("./unblockUser")
 const fetchAllUsersBlockedByUser = require("./fetchAllUsersBlockedByUser")
-const fetchAllUsers = require("./fetchAllUsers")
+const fetchAllUsers = require("./fetchAllUsers");
+const fetchNewMessages = require("./fetchNewMessages");
+const addToNewMessages = require("./addToNewMessages");
+const deleteSeenNewMessages = require("./deleteSeenNewMessages");
 
  module.exports = async ({payload,action}) =>{
 
@@ -20,6 +23,9 @@ const fetchAllUsers = require("./fetchAllUsers")
     case "unblock_user" : return unblockUser(payload)
     case "fetch_all_users_blocked" : return fetchAllUsersBlockedByUser(payload)
     case "fetch_all_users" : return fetchAllUsers(payload)
+    case "fetch_new_messages" : return fetchNewMessages(payload)
+    case "add_to_new_messages" : return addToNewMessages(payload)
+    case "remove_from_new_messages" : return deleteSeenNewMessages(payload)
   }
 
 }
