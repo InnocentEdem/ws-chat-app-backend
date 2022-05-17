@@ -160,44 +160,6 @@ class UserServices {
       return confirm
     } catch (err) {}
   }
-  // async addUserToGroup(user){
-  //     try{
-  //         return await Group.
-  //     }catch(err){
-
-  //     }
-
-  // }
-  // async findUserFriends(){
-
-  // }
-  // async checkIfUserOnline(){
-
-  // }
-  // async saveUserMessage(){
-
-  // }
-  // async saveGroupMessage(){
-
-  // }
-  // async deleteUserMessage(){
-
-  // }
-
-  // async updateUserStatus(){
-
-  // }
-  // async fetchGroupMessages(){
-
-  // }
-  // async deleteGroupMessage(){
-
-  // }
-  // async blockUserFromUser(){
-
-  // }
-  // async blockUserFromGroup(){
-
-  // }
+ 
 }
 module.exports = UserServices

@@ -154,10 +154,10 @@ module.exports = (server) => {
       webSocketConnection.send(JSON.stringify(blockListResult));
       webSocketConnection.send(JSON.stringify(blockListForBlockerResult));
       webSocketConnection.send(JSON.stringify(allMessagesResult));
+      webSocketConnection.send(JSON.stringify(userUpdate));
       webSocketConnection.send(JSON.stringify(allUsersUpdate));
       webSocketConnection.send(JSON.stringify(newMessagesOnLogin));
       broadcastMessage(userUpdate); 
-      webSocketConnection.send(JSON.stringify(userUpdate));
 
       webSocketConnection.on("message", async (message) => {
         //message handler using livemessage controller
